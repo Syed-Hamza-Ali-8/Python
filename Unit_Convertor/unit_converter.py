@@ -54,12 +54,15 @@ st.title('🔄 Universal Unit Converter 🌍')
 
 category = st.sidebar.selectbox('📂 Select Conversion Category', list(conversion_factors.keys()))
 
+message_displayed = False  # Flag to control the message display
+
 if category == '🌡️ Temperature':
     from_unit = st.selectbox('From 🌡️', conversion_factors[category].keys())
     to_unit = st.selectbox('To 🔄', conversion_factors[category].keys())
     value = st.number_input('🔢 Enter value', format='%f')
 
     if st.button('🚦 Convert'):
+        message_displayed = True  # Set flag to True after button click
         if from_unit == to_unit:
             result = value
         elif from_unit == 'Celsius':
@@ -77,7 +80,7 @@ if category == '🌡️ Temperature':
                 result = value - 273.15
             elif to_unit == 'Fahrenheit':
                 result = (value - 273.15) * 9/5 + 32
-        st.success(f'🎯 {value} {from_unit} = {result:.3f} {to_unit}')
+        st.success(f'🎯 {value} {from_unit} = {result:.3f} {to_unit}' if result % 1 != 0 else f'🎯 {value} {from_unit} = {int(result)} {to_unit}')
 
 else:
     from_unit = st.selectbox('From 🎯', conversion_factors[category].keys())
@@ -85,10 +88,18 @@ else:
     value = st.number_input('🔢 Enter value', format='%f')
 
     if st.button('🚦 Convert'):
+        message_displayed = True  # Set flag to True after button click
         result = value * conversion_factors[category][from_unit] / conversion_factors[category][to_unit]
-        st.success(f'🎯 {value} {from_unit} = {result:.3f} {to_unit}')
+        st.success(f'🎯 {value} {from_unit} = {result:.3f} {to_unit}' if result % 1 != 0 else f'🎯 {value} {from_unit} = {int(result)} {to_unit}')
 
-st.markdown("""
+if message_displayed:
+    st.markdown("""
+        <div style="text-align: center; padding: 20px; background-color: #f0f8ff; border-radius: 10px; font-size: 20px; font-weight: bold; color: #2E8B57;">
+            Developed with dedication by Hamza 😎
+        </div>
+    """, unsafe_allow_html=True)
+
+st.markdown(""" 
     <style>
         .css-1d391kg {
             font-size: 20px;
@@ -106,11 +117,10 @@ st.markdown("""
             padding: 12px 24px;
             border-radius: 8px;
             border: none;
-            transition: none; /* Remove transition effect */
         }
         .stButton>button:hover {
-            background-color: #1E90FF; /* Keep background the same on hover */
-            color: white; /* Keep text color the same on hover */
+            background-color: #1E90FF;
+            color: white;
         }
     </style>
 """, unsafe_allow_html=True)
