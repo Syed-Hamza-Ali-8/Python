@@ -1,4 +1,5 @@
 import streamlit as st
+import matplotlib.pyplot as plt
 
 # Define the quiz questions and answers
 quiz_questions = [
@@ -168,14 +169,14 @@ quiz_questions = [
     },
     {
         "question": "What is the output of `print(True + False)`?",
-        "options": ["1", "0", "True", "Error"],
+        "options": ["0", "1", "True", "Error"],
         "answer": "1",
         "topic": "Keywords and Variables",
         "level": "Basic"
     },
     {
         "question": "Which keyword is used to exit a loop in Python?",
-        "options": ["break", "exit", "stop", "end"],
+        "options": ["stop", "exit", "break", "end"],
         "answer": "break",
         "topic": "Keywords and Variables",
         "level": "Medium"
@@ -189,14 +190,14 @@ quiz_questions = [
     },
     {
         "question": "Which keyword is used to define a class in Python?",
-        "options": ["class", "def", "struct", "object"],
+        "options": ["def", "obj", "constructor", "class"],
         "answer": "class",
         "topic": "Keywords and Variables",
         "level": "Medium"
     },
     {
         "question": "What is the output of `print(isinstance(3, int))`?",
-        "options": ["True", "False", "3", "Error"],
+        "options": ["3", "True", "False", "Error"],
         "answer": "True",
         "topic": "Keywords and Variables",
         "level": "Advanced"
@@ -217,7 +218,7 @@ quiz_questions = [
     },
     {
         "question": "Which keyword is used to import modules in Python?",
-        "options": ["import", "include", "require", "use"],
+        "options": ["include", "require", "use", "import"],
         "answer": "import",
         "topic": "Keywords and Variables",
         "level": "Advanced"
@@ -239,6 +240,18 @@ if "balloons_shown" not in st.session_state:
 # Initialize session state to track if the quiz has been submitted once for each topic
 if "quiz_submitted_once" not in st.session_state:
     st.session_state.quiz_submitted_once = {}
+
+# Initialize session state to store user details
+if "user_name" not in st.session_state:
+    st.session_state.user_name = ""
+if "user_roll_no" not in st.session_state:
+    st.session_state.user_roll_no = ""
+if "user_day" not in st.session_state:
+    st.session_state.user_day = ""
+
+# Initialize session state to track if the quiz has been started
+if "quiz_started" not in st.session_state:
+    st.session_state.quiz_started = False
 
 # Custom CSS for styling
 st.markdown(
@@ -310,6 +323,22 @@ def run_quiz():
     st.markdown("# 🐍 Python Quiz App")
     st.markdown("### Test your knowledge of Python basics!")
 
+    # Collect user details if not already collected
+    if not st.session_state.quiz_started:
+        st.markdown("### Please enter your details to start the quiz:")
+        st.session_state.user_name = st.text_input("Enter your name:")
+        st.session_state.user_roll_no = st.text_input("Enter your roll number:")
+        st.session_state.user_day = st.selectbox("Select Your Slot:", ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"])
+
+        if st.button("Start Quiz"):
+            if st.session_state.user_name and st.session_state.user_roll_no and st.session_state.user_day:
+                st.session_state.quiz_started = True  # Mark quiz as started
+                st.success("Details saved! You can now start the quiz.")
+                st.rerun()  # Force a rerun to proceed to the quiz section
+            else:
+                st.error("Please fill in all the details to proceed.")
+        return  # Stop further execution until details are entered and "Start Quiz" is clicked
+
     # Add a sidebar for topic selection
     st.sidebar.markdown("## 🎯 Select a Topic")
     topics = list(set(q["topic"] for q in quiz_questions))  # Get unique topics
@@ -378,9 +407,21 @@ def run_quiz():
                 if user_answer == q['answer']:
                     score += 1
 
-        # Display final score
+        # Display final score with user details
         st.write("---")
-        st.markdown(f"## 🎉 Your score: **{score}/{len(filtered_questions)}**")
+        st.markdown(f"## 🎉 {st.session_state.user_name} (Roll No: {st.session_state.user_roll_no}), your score is: **{score}/{len(filtered_questions)}**")
+
+        # Show motivational quote if score is less than 5
+        if score < 5:
+            st.markdown("### Don't lose hope! You'll get better day by day. 💪")
+
+        # Data Visualization: Bar chart for score
+        st.write("---")
+        st.markdown("## 📈 Your Performance")
+        fig, ax = plt.subplots()
+        ax.bar(["Your Score", "Total Questions"], [score, len(filtered_questions)], color=["#4CAF50", "#34495e"])
+        ax.set_ylim(0, len(filtered_questions))
+        st.pyplot(fig)
 
         # Show balloons if score > 5 and balloons have not been shown yet for the selected topic
         if score > 5 and not st.session_state.balloons_shown[selected_topic]:
@@ -402,6 +443,10 @@ def run_quiz():
             for i, q in enumerate(filtered_questions):
                 st.markdown(f"### ❓ Question {i + 1}: {q['question']}")
                 st.markdown(f"**Correct answer:** {q['answer']}")
+
+        # Footer
+        st.write("---")
+        st.markdown("### Made with ❤️ by Hamza")
 
 # Run the quiz app
 if __name__ == "__main__":
