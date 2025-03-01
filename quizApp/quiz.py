@@ -225,31 +225,21 @@ quiz_questions = [
     }
 ]
 
-# Initialize session state to store user answers (as indices) for each topic
+# Initialize session state
 if "user_answers" not in st.session_state:
     st.session_state.user_answers = {}
-
-# Initialize session state to track quiz submission for each topic
 if "quiz_submitted" not in st.session_state:
     st.session_state.quiz_submitted = {}
-
-# Initialize session state to track if balloons have been shown for each topic
 if "balloons_shown" not in st.session_state:
     st.session_state.balloons_shown = {}
-
-# Initialize session state to track if the quiz has been submitted once for each topic
 if "quiz_submitted_once" not in st.session_state:
     st.session_state.quiz_submitted_once = {}
-
-# Initialize session state to store user details
 if "user_name" not in st.session_state:
     st.session_state.user_name = ""
 if "user_roll_no" not in st.session_state:
     st.session_state.user_roll_no = ""
 if "user_day" not in st.session_state:
     st.session_state.user_day = ""
-
-# Initialize session state to track if the quiz has been started
 if "quiz_started" not in st.session_state:
     st.session_state.quiz_started = False
 
@@ -257,9 +247,41 @@ if "quiz_started" not in st.session_state:
 st.markdown(
     """
     <style>
+    /* Global background color */
     .stApp {
         background-color: #000000;
     }
+
+    /* Input fields (text input, number input, etc.) */
+    .stTextInput input, .stNumberInput input, .stSelectbox select, .stTextArea textarea {
+        background-color: #333333 !important;
+        color: #ffffff !important;
+        border: 1px solid #4CAF50 !important;
+    }
+
+    /* Dropdown options */
+    .stSelectbox div[data-baseweb="select"] > div {
+        background-color: #333333 !important;
+        color: #ffffff !important;
+    }
+
+    /* Dropdown popover (options list) */
+    .stSelectbox div[data-baseweb="popover"] {
+        background-color: #333333 !important;
+        color: #ffffff !important;
+    }
+
+    /* Sidebar background */
+    .css-1d391kg {
+        background-color: #1e1e1e !important;
+    }
+
+    /* Sidebar text */
+    .css-1d391kg h1, .css-1d391kg h2, .css-1d391kg h3, .css-1d391kg p, .css-1d391kg label {
+        color: #ffffff !important;
+    }
+
+    /* Button styling */
     .stButton button {
         background-color: #4CAF50;
         color: white;
@@ -271,6 +293,8 @@ st.markdown(
     .stButton button:hover {
         background-color: #45a049;
     }
+
+    /* Markdown headers */
     .stMarkdown h1 {
         color: #4CAF50;
         text-align: center;
@@ -281,6 +305,8 @@ st.markdown(
     .stMarkdown h3 {
         color: #34495e;
     }
+
+    /* Success, error, and warning messages */
     .stSuccess {
         color: #28a745;
     }
@@ -289,29 +315,6 @@ st.markdown(
     }
     .stWarning {
         color: #ffc107;
-    }
-    /* Customize the dropdown */
-    .stSelectbox div[data-baseweb="select"] {
-        background-color: #000000;
-        border-radius: 5px;
-        border: 1px solid #ccc;
-    }
-    .stSelectbox div[data-baseweb="select"]:hover {
-        border-color: #4CAF50;
-    }
-    .stSelectbox div[data-baseweb="select"] > div {
-        color: #ffffff; /* White text for selected option */
-    }
-    .stSelectbox div[data-baseweb="popover"] {
-        background-color: #000000; /* Background for dropdown options */
-        color: #ffffff; /* White text for dropdown options */
-    }
-    .stSelectbox div[data-baseweb="popover"] div {
-        color: #ffffff; /* White text for dropdown options */
-    }
-    /* Ensure dropdown appears above other elements */
-    .stSelectbox div[data-baseweb="popover"] {
-        z-index: 1000 !important;
     }
     </style>
     """,
