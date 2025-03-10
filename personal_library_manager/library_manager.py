@@ -28,6 +28,9 @@ def save_library(library):
 if "library" not in st.session_state:
     st.session_state.library = load_library()
 
+if "book_removed" not in st.session_state:
+    st.session_state.book_removed = None
+
 st.title("📖 My Digital Bookshelf")
 
 st.header("🔍 Search Your Collection")
@@ -52,15 +55,19 @@ read_status = st.radio("Have you read this book?", ["Unread", "Read"])
 
 if st.button("Add Book"):
     if title and author and genre and year:
-        st.session_state.library.append({
-            "Title": title,
-            "Author": author,
-            "Year": int(year),
-            "Genre": genre,
-            "Read": read_status == "Read"
-        })
-        save_library(st.session_state.library)
-        st.success(f"📖 '{title}' added to your collection!")
+        # Check if the book title already exists in the library
+        if any(book["Title"].lower() == title.lower() for book in st.session_state.library):
+            st.error(f"⚠️ The book titled '{title}' is already in your collection!")
+        else:
+            st.session_state.library.append({
+                "Title": title,
+                "Author": author,
+                "Year": int(year),
+                "Genre": genre,
+                "Read": read_status == "Read"
+            })
+            save_library(st.session_state.library)
+            st.success(f"📖 '{title}' added to your collection!")
     else:
         st.error("⚠️ Please fill in all fields.")
 
@@ -76,10 +83,17 @@ st.header("🗑️ Remove a Book")
 titles = [book["Title"] for book in st.session_state.library]
 book_to_remove = st.selectbox("Select a book to remove", ["None"] + titles)
 
-if st.button("Remove Book") and book_to_remove != "None":
+remove_button_clicked = st.button("Remove Book")
+
+if remove_button_clicked and book_to_remove != "None":
     st.session_state.library = [book for book in st.session_state.library if book["Title"] != book_to_remove]
     save_library(st.session_state.library)
-    st.success(f"🗑️ '{book_to_remove}' removed successfully!")
+    st.session_state.book_removed = book_to_remove
+    st.rerun()
+
+if st.session_state.book_removed:
+    st.success(f"🗑️ '{st.session_state.book_removed}' removed successfully!")
+    st.session_state.book_removed = None  # Reset the flag
 
 st.header("📊 Library Insights")
 total_books = len(st.session_state.library)
