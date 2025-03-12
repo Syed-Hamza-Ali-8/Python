@@ -1,35 +1,33 @@
 import streamlit as st
 import pandas as pd
+from pymongo import MongoClient
 
-LIBRARY_FILE = "library.txt"
+MONGO_URI = "mongodb+srv://ha5755420:NtH7Uiig4Wy75nEJ@cluster0.4whod.mongodb.net/digital_bookshelf?retryWrites=true&w=majority&appName=Cluster0"
+
+DATABASE_NAME = "digital_bookshelf"
+COLLECTION_NAME = "books"
+
+client = MongoClient(MONGO_URI)
+db = client[DATABASE_NAME]
+collection = db[COLLECTION_NAME]
 
 def load_library():
-    library = []
-    try:
-        with open(LIBRARY_FILE, "r") as file:
-            for line in file:
-                title, author, year, genre, read_status = line.strip().split(" | ")
-                library.append({
-                    "Title": title,
-                    "Author": author,
-                    "Year": int(year),
-                    "Genre": genre,
-                    "Read": read_status == "Read"
-                })
-    except FileNotFoundError:
-        pass
-    return library
+    return list(collection.find({}, {"_id": 0}))  # Exclude `_id` field
 
-def save_library(library):
-    with open(LIBRARY_FILE, "w") as file:
-        for book in library:
-            file.write(f"{book['Title']} | {book['Author']} | {book['Year']} | {book['Genre']} | {'Read' if book['Read'] else 'Unread'}\n")
+def save_book(book):
+    collection.insert_one(book)
+
+def search_books(query):
+    return list(collection.find(
+        {"$or": [{"Title": {"$regex": query, "$options": "i"}}, {"Author": {"$regex": query, "$options": "i"}}]},
+        {"_id": 0}
+    ))
+
+def remove_book(title):
+    collection.delete_one({"Title": title})
 
 if "library" not in st.session_state:
     st.session_state.library = load_library()
-
-if "book_removed" not in st.session_state:
-    st.session_state.book_removed = None
 
 st.title("📖 My Digital Bookshelf")
 
@@ -37,7 +35,7 @@ st.header("🔍 Search Your Collection")
 search_query = st.text_input("Enter book title or author")
 
 if st.button("Search"):
-    results = [book for book in st.session_state.library if search_query.lower() in book["Title"].lower() or search_query.lower() in book["Author"].lower()]
+    results = search_books(search_query)
     if results:
         st.write("🎯 Search Results:")
         df = pd.DataFrame(results)
@@ -55,18 +53,19 @@ read_status = st.radio("Have you read this book?", ["Unread", "Read"])
 
 if st.button("Add Book"):
     if title and author and genre and year:
-        # Check if the book title already exists in the library
-        if any(book["Title"].lower() == title.lower() for book in st.session_state.library):
+        # Check if book already exists
+        if collection.find_one({"Title": title}):
             st.error(f"⚠️ The book titled '{title}' is already in your collection!")
         else:
-            st.session_state.library.append({
+            book = {
                 "Title": title,
                 "Author": author,
                 "Year": int(year),
                 "Genre": genre,
                 "Read": read_status == "Read"
-            })
-            save_library(st.session_state.library)
+            }
+            save_book(book)
+            st.session_state.library.append(book)
             st.success(f"📖 '{title}' added to your collection!")
     else:
         st.error("⚠️ Please fill in all fields.")
@@ -74,6 +73,10 @@ if st.button("Add Book"):
 st.header("📜 Your Collection")
 if st.session_state.library:
     df = pd.DataFrame(st.session_state.library)
+    
+    if "_id" in df.columns:
+        df = df.drop(columns=["_id"])
+
     df["Read"] = df["Read"].apply(lambda x: "✅ Yes" if x else "❌ No")
     st.dataframe(df)
 else:
@@ -83,17 +86,18 @@ st.header("🗑️ Remove a Book")
 titles = [book["Title"] for book in st.session_state.library]
 book_to_remove = st.selectbox("Select a book to remove", ["None"] + titles)
 
-remove_button_clicked = st.button("Remove Book")
+if st.button("Remove Book") and book_to_remove != "None":
+    remove_book(book_to_remove)
 
-if remove_button_clicked and book_to_remove != "None":
     st.session_state.library = [book for book in st.session_state.library if book["Title"] != book_to_remove]
-    save_library(st.session_state.library)
-    st.session_state.book_removed = book_to_remove
-    st.rerun()
 
-if st.session_state.book_removed:
-    st.success(f"🗑️ '{st.session_state.book_removed}' removed successfully!")
-    st.session_state.book_removed = None  # Reset the flag
+    st.session_state.success_message = f"🗑️ '{book_to_remove}' removed successfully!"
+
+    st.rerun() 
+
+if "success_message" in st.session_state:
+    st.success(st.session_state.success_message)
+    del st.session_state.success_message  # Clear the message after displaying
 
 st.header("📊 Library Insights")
 total_books = len(st.session_state.library)
@@ -101,4 +105,4 @@ read_books = sum(1 for book in st.session_state.library if book["Read"])
 percentage_read = (read_books / total_books) * 100 if total_books > 0 else 0
 
 st.write(f"📚 Total Books: {total_books}")
-st.write(f"✅ Books Read: {read_books} ({percentage_read}%)")
+st.write(f"✅ Books Read: {read_books} ({percentage_read:.2f}%)")
