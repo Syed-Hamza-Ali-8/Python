@@ -3,12 +3,10 @@ import google.generativeai as genai
 import base64
 import time
 from pymongo import MongoClient
-from dotenv import load_dotenv
-import os
+import re
 
-load_dotenv()
-MONGO_URI = os.getenv("MONGO_URI")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+MONGO_URI = st.secrets["MONGO_URI"]
+GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
 
 st.set_page_config(page_title="AI Code Assistant", layout="wide")
 
@@ -21,6 +19,12 @@ if "logged_in" not in st.session_state:
 if "user_email" not in st.session_state:
     st.session_state.user_email = ""
 
+# Email validation function
+def is_valid_email(email):
+    # Basic email regex pattern
+    pattern = r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$"
+    return re.match(pattern, email) is not None
+
 def login_page():
     st.title("🔐 Login to Access AI Code Assistant")
     with st.form("login_form"):
@@ -31,6 +35,8 @@ def login_page():
         if submit:
             if name.strip() == "" or email.strip() == "":
                 st.warning("Please enter both Name and Email.")
+            elif not is_valid_email(email):  # Validate email format
+                st.warning("⚠️ Please enter a valid email address.")
             else:
                 with st.spinner("Logging you in... Please wait"):
                     time.sleep(2)
@@ -49,7 +55,6 @@ def login_page():
                     st.rerun()
 
 def main_app():
-
     st.sidebar.success(f"Welcome, {st.session_state.user_name}! 👋")
 
     genai.configure(api_key=GEMINI_API_KEY)
@@ -92,7 +97,7 @@ def main_app():
         output_lang = st.selectbox("Select Explanation Language:", ['English', 'Urdu'])
         line_by_line = st.checkbox("Explain Line by Line")
         st.markdown("---")
-        st.write("Developed by Syed Hamza Ali (https://your-portfolio-link.com)")
+        st.markdown("Developed by Syed Hamza Ali ([LinkedIn](https://www.linkedin.com/in/hamza-ali-b72b582ab))")
 
     code_input = st.text_area("🚀 Paste your code here:", height=300, key="code_input")
     detected_lang = detect_language(code_input)
