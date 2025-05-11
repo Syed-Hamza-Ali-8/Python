@@ -1,97 +1,131 @@
 import pygame
 import random
-import math
 
+# Initialize pygame
 pygame.init()
 
-screen = pygame.display.set_mode((800, 600))
-pygame.display.set_caption("Space Invaders - Simple Version")
+# Set up display
+WIDTH, HEIGHT = 800, 600
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Space Invaders")
 
+# Define colors
 WHITE = (255, 255, 255)
-RED = (255, 0, 0)
 GREEN = (0, 255, 0)
+RED = (255, 0, 0)
+BLUE = (0, 0, 255)
+BLACK = (0, 0, 0)
 
-player_x = 370
-player_y = 480
-player_x_change = 0
+# Player settings
+player_width = 50
+player_height = 50
+player_x = WIDTH // 2 - player_width // 2
+player_y = HEIGHT - player_height - 10
+player_velocity = 5
 
-enemy_x = []
-enemy_y = []
-enemy_x_change = []
-enemy_y_change = []
-num_of_enemies = 6
+# Bullet settings
+bullet_width = 5
+bullet_height = 10
+bullet_velocity = 7
+bullet_state = "ready"  # "ready" means the bullet is ready to be fired, "fire" means it is moving
 
-for i in range(num_of_enemies):
-    enemy_x.append(random.randint(0, 736))
-    enemy_y.append(random.randint(50, 150))
-    enemy_x_change.append(3)
-    enemy_y_change.append(40)
+# Alien settings
+alien_width = 50
+alien_height = 50
+alien_velocity = 1
+alien_count = 5
+alien_x = [random.randint(0, WIDTH - alien_width) for _ in range(alien_count)]
+alien_y = [random.randint(50, 150) for _ in range(alien_count)]
+alien_direction = [1 for _ in range(alien_count)]  # 1 means moving right, -1 means moving left
 
-bullet_x = 0
-bullet_y = 480
-bullet_y_change = 10
-bullet_state = "ready"
+# Set up font
+font = pygame.font.SysFont("Arial", 24)
 
-score = 0
-font = pygame.font.Font(None, 36)
-
-def is_collision(enemy_x, enemy_y, bullet_x, bullet_y):
-    distance = math.sqrt((math.pow(enemy_x - bullet_x, 2)) + (math.pow(enemy_y - bullet_y, 2)))
-    return distance < 27
-
-running = True
-while running:
-    screen.fill((0, 0, 0))  # Black background
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-            
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_LEFT:
-                player_x_change = -5
-            if event.key == pygame.K_RIGHT:
-                player_x_change = 5
-            if event.key == pygame.K_SPACE:
-                if bullet_state == "ready":
-                    bullet_x = player_x + 16
-                    bullet_y = player_y
-                    bullet_state = "fire"
-                    
-        if event.type == pygame.KEYUP:
-            if event.key == pygame.K_LEFT or event.key == pygame.K_RIGHT:
-                player_x_change = 0
-
-    player_x += player_x_change
-    if player_x <= 0:
-        player_x = 0
-    elif player_x >= 736:
-        player_x = 736
-
-    for i in range(num_of_enemies):
-        enemy_x[i] += enemy_x_change[i]
-        if enemy_x[i] <= 0 or enemy_x[i] >= 736:
-            enemy_x_change[i] *= -1
-            enemy_y[i] += enemy_y_change[i]
-
-        collision = is_collision(enemy_x[i], enemy_y[i], bullet_x, bullet_y)
-        if collision:
-            bullet_y = 480
-            bullet_state = "ready"
-            score += 1
-            enemy_x[i] = random.randint(0, 736)
-            enemy_y[i] = random.randint(50, 150)
-        pygame.draw.rect(screen, RED, (enemy_x[i], enemy_y[i], 50, 50))
-
-    if bullet_state == "fire":
-        pygame.draw.rect(screen, GREEN, (bullet_x, bullet_y, 10, 20))
-        bullet_y -= bullet_y_change
-        if bullet_y <= 0:
-            bullet_y = 480
-            bullet_state = "ready"
-
-    pygame.draw.rect(screen, WHITE, (player_x, player_y, 50, 50))
-
+# Function to display the player's score
+def show_score(score):
     score_text = font.render(f"Score: {score}", True, WHITE)
     screen.blit(score_text, (10, 10))
-    
-    pygame.display.update()
+
+# Function to draw the player
+def draw_player(x, y):
+    pygame.draw.rect(screen, GREEN, (x, y, player_width, player_height))
+
+# Function to draw the bullet
+def draw_bullet(x, y):
+    pygame.draw.rect(screen, WHITE, (x, y, bullet_width, bullet_height))
+
+# Function to draw aliens
+def draw_aliens(x, y):
+    pygame.draw.rect(screen, RED, (x, y, alien_width, alien_height))
+
+# Main game loop
+def game_loop():
+    global player_x, player_y, bullet_state, bullet_x, bullet_y, alien_x, alien_y, alien_direction
+    running = True
+    score = 0
+
+    while running:
+        screen.fill(BLACK)
+
+        # Check for events (key presses, quitting, etc.)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+        # Get key presses
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_LEFT] and player_x > 0:
+            player_x -= player_velocity
+        if keys[pygame.K_RIGHT] and player_x < WIDTH - player_width:
+            player_x += player_velocity
+        if keys[pygame.K_SPACE] and bullet_state == "ready":
+            bullet_x = player_x + player_width // 2 - bullet_width // 2
+            bullet_y = player_y
+            bullet_state = "fire"
+
+        # Move the bullet
+        if bullet_state == "fire":
+            bullet_y -= bullet_velocity
+            if bullet_y < 0:
+                bullet_state = "ready"
+
+        # Move the aliens
+        for i in range(alien_count):
+            alien_x[i] += alien_velocity * alien_direction[i]
+            if alien_x[i] <= 0 or alien_x[i] >= WIDTH - alien_width:
+                alien_direction[i] *= -1
+                alien_y[i] += alien_height
+
+            # Check for collision with bullet
+            if bullet_state == "fire" and alien_x[i] < bullet_x < alien_x[i] + alien_width and alien_y[i] < bullet_y < alien_y[i] + alien_height:
+                alien_x[i] = random.randint(0, WIDTH - alien_width)
+                alien_y[i] = random.randint(50, 150)
+                bullet_state = "ready"
+                score += 1
+
+            # Draw alien
+            draw_aliens(alien_x[i], alien_y[i])
+
+        # Check for collision with player
+        for i in range(alien_count):
+            if alien_x[i] < player_x < alien_x[i] + alien_width and alien_y[i] < player_y < alien_y[i] + alien_height:
+                running = False
+
+        # Draw player and bullet
+        draw_player(player_x, player_y)
+        if bullet_state == "fire":
+            draw_bullet(bullet_x, bullet_y)
+
+        # Display score
+        show_score(score)
+
+        # Update the display
+        pygame.display.update()
+
+        # Control the frame rate
+        pygame.time.Clock().tick(60)
+
+    pygame.quit()
+
+if __name__ == "__main__":
+    game_loop()
