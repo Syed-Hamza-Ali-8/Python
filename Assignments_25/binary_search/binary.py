@@ -3,7 +3,7 @@ import streamlit as st
 def binary_search(arr, target):
     low = 0
     high = len(arr) - 1
-    steps = []  # To store steps for visualization
+    steps = [] 
 
     while low <= high:
         mid = (low + high) // 2
@@ -23,23 +23,20 @@ def binary_search(arr, target):
 
 st.title("🔍 Binary Search Visualizer")
 
-user_input = st.text_input("Enter sorted numbers (comma-separated):", "1, 3, 5, 7, 9, 11")
+# Remove user input for array
+arr = [1, 3, 5, 7, 9, 11]  # Hidden fixed array
+arr.sort()
+
 target = st.number_input("Enter the number to search:", step=1)
 
 if st.button("Search"):
-    try:
-        arr = list(map(int, user_input.split(',')))
-        arr.sort()  # Ensure the array is sorted
-        st.write("Sorted Array:", arr)
-        index, steps = binary_search(arr, target)
+    index, steps = binary_search(arr, target)
 
-        st.subheader("Search Steps:")
-        for step in steps:
-            st.write(step)
-        
-        if index != -1:
-            st.success(f"Element found at index {index}")
-        else:
-            st.error("Element not found in the array")
-    except ValueError:
-        st.error("Please enter valid integers separated by commas.")
+    st.subheader("Search Steps:")
+    for step in steps:
+        st.write(step)
+    
+    if index != -1:
+        st.success(f"Element found at index {index}")
+    else:
+        st.error("Element not found in the array")
